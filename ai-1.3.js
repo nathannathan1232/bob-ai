@@ -492,7 +492,7 @@ var download = function(uri, filename, callback){
   });
 };
 
-login({email: "nathannathan1232mc@gmail.com", password: "ghyghy123123"}, function callback (err, api) {
+login({email: "insert email here", password: "password"}, function callback (err, api) {
     if(err) return console.error(err);
 
     api.setOptions({listenEvents: true});
