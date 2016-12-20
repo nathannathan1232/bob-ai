@@ -144,28 +144,6 @@ function command(o_msg, e){
 	if(msg_b.match(/what time|the time|what day|what year|what month/i))
 		return (new Date());
 
-	// How many days until a holiday
-
-	if(msg_b.match(/how many days|days until|how long|long til|long until|when is/i)){
-		var holidays = {
-			christmas: 359,
-			christmas_eve: 358,
-			halloween: 304,
-			new_years: 1,
-			new_years_eve: 365,
-			valentines_day: 45
-		};
-		var query = msg[msg.length - 1].toLowerCase().replace(/\?/ig, "");
-		var d = new Date();
-		var start = new Date(d.getFullYear(), 0, 0);
-		var day = Math.floor((d - start) / 1000 * 60 * 60 * 24);
-		if(holidays[query]){
-			if(holidays[query] < day)
-				day -= 365;
-			return "There are " + (holidays[query] - day + 1) + " days until " + query;
-		}
-	}
-
 	// Tells you his favorite words
 
 	if(msg_b.match(/what are your fav|your favorite words/i)){
@@ -255,7 +233,7 @@ function command(o_msg, e){
 		return sender;
 
 	return false;
-}
+} // End commands
 
 /*
 	Decides weather or not to respond.
@@ -303,7 +281,7 @@ function r(arr){
 }
 
 /*
-	Words are always stored as their index in db.w[]. This function finds the index.
+	Words are normally reffered to as their index. This functions finds the index given a string.
 */
 
 function wordIndex(word){
@@ -628,8 +606,7 @@ login({email: user_email, password: user_password}, function callback (err, api)
             });
             var msg = {
       			body: messageIn(event),
-      			//attachment: fs.createReadStream(__dirname + '/out.png')
-   			}
+   		}
             api.sendMessage(msg, event.threadID);
             break;
           case "event":
