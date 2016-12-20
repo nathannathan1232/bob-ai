@@ -201,6 +201,19 @@ function command(o_msg, e){
 	}
 
 	/*
+		Changes the color of a chat.
+	*/
+
+	if(msg_b.match(/change color/i)){
+		var color = msg[msg.length - 1];
+		if(!color.length == 7 || !color.match(/#....../i))
+			color = "#5467ff";	
+ 		api.changeThreadColor(color, e.threadID, function callback(err) {
+ 				if(err) return console.error(err);
+ 		});
+	}
+	
+	/*
 		Writes db.w to file.
 	*/
 
