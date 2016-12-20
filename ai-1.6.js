@@ -225,7 +225,18 @@ function command(o_msg, e){
 		});
 		return "ok";
 	}
-
+	
+	/*
+		Says that Bob is talking
+	*/
+	
+	if(msg_b.match(/talk!/i)){
+		var talking = msg[msg.length - 1];
+		api.sendTypingIndicator(e.threadID, function callback(err) {
+ 				if(err) return console.error(err);
+ 		});
+	})
+	
 	/*
 		List things. Bob can list things like currencies.
 	*/
