@@ -231,7 +231,6 @@ function command(o_msg, e){
 	*/
 	
 	if(msg_b.match(/talk!/i)){
-		var talking = msg[msg.length - 1];
 		api.sendTypingIndicator(e.threadID, function callback(err) {
  				if(err) return console.error(err);
  		});
