@@ -6,9 +6,9 @@ var http = require('http');
 
 "use strict";
 
-var version = "1.6.1";
+var version = "1.6.2";
 
-var user_email = "email",
+var user_email = "email@gmail.com",
 	user_password = "password";
 
 var db = {
@@ -22,7 +22,6 @@ var api_g;
 /*
 	messageIn() is called when a message is recieved.
 	It submits the sentences to learnWords, then decides weather or not to respond and returns either the response or false.
-
 	This function doesn't make sense. Good luck.
 */
 
@@ -72,7 +71,6 @@ function messageOut(o_msg, e){
 	Commands are useful and awesome. The general syntax is "bob {command} {arguments}".
 	Some commands might be something like "How many words do you know?"
 	Those are fine as long as they aren't detected often when the message in doesn't fit.
-
 	In general, regex should be used instead of something like msg[2] == "". Regex can ignore capitol letters
 	and it can be made to be more relaxed than strict comparison operators.
 */
@@ -201,6 +199,9 @@ function command(o_msg, e){
 		var tmp = 1 / currency.rates[cur_a];
 		return "The rate is " + currency.rates[cur_b] * tmp + " " + cur_b + " to 1 " + cur_a;
 	}
+
+	if(msg_b.match(/do you love/i))
+		return "I'm in love with KITTY!!!!";
 
 	/*
 		Changes the color of a chat.
@@ -404,40 +405,35 @@ function genMessage(topic){
 
 // Chooses the next word in the sentence based on the last 3 words and the topic.
 
-function pickNext(a, b, c, prev, topic){ //prev is [last word, word before that, etc.]
+function pickNext(a, b, c, prev, topic){
 
-	var a_possible = []; //get all words that could possibly go next
-	for(var i = 0; i < a.length; i++)
-		a_possible.push(a[i][0]);
-	var b_possible = []; //get all words that could go next considering the last 2 words
-	for(var i = 0; i < b.length; b++)
-		if(prev[0] == b[i][0])
-			b_possible.push(b[i][1]);
-	var c_possible = []; //get all possible words based on the last 3 words so far
+	var c_possible = [];
 	for(var i = 0; i < c.length; i++)
 		if(prev[0] == c[i][1] && prev[1] == c[i][0])
 			c_possible.push(c[i][2]);
 
-	// If there's a word that makes sense in a large context, use it. Otherwise choose a word that
-	// often occures after that last word.
-
-	console.log("Words matching topic: " + compare(a_possible, topic));
-
 	if(c_possible.length > 0){
-		console.log("C");
 		return c_possible[r(c_possible)];
 	}
-	else if(b_possible.length > 0){
-		console.log("B");
+
+	var b_possible = [];
+	for(var i = 0; i < b.length; b++)
+		if(prev[0] == b[i][0])
+			b_possible.push(b[i][1]);
+	
+	if(b_possible.length > 0){
 		return b_possible[r(b_possible)];
 	}
-	else if(a_possible.length > 0){
-		console.log("A");
+		
+	var a_possible = [];
+	for(var i = 0; i < a.length; i++)
+		a_possible.push(a[i][0]);
+
+	if(a_possible.length > 0){
 		return a_possible[r(a_possible)];
 	}
-	else
-		// If no good words are found at all, pick a random word.
-		return db.w[r(db.w)].word;
+
+	return db.w[r(db.w)].word;
 }
 
 /*
@@ -473,7 +469,7 @@ function pickFirstWord(msg){
 
 	for(var i = 0; i < possible.length; i++)
 		possible[i] = db.w[wordIndex(main_words[i])].related;
-	
+
 	if(possible.length > 1)
 		for(var i = 0; i < possible[0].length; i++)
 			for(var x = 0; x < possible[1].length; x++)
@@ -484,6 +480,16 @@ function pickFirstWord(msg){
 		return wordIndex(main_words[r(main_words)]);
 
 	return wordIndex(possible[0][r(possible[0])]);
+}
+
+// Finds the average count for a word. Useful for finding the rarity of a word in relation to every other word.
+
+function avgCount(){
+	var avg = 0;
+	for(var i = 0; i < db.w.length; i++)
+		avg += db.w[i].count;
+	avg /= db.w.length;
+	return avg;
 }
 
 /*
@@ -507,16 +513,6 @@ function justLearn(msg){
 	for(var i = 0; i < msg_words.length; i++)
 		learnWords(removeNonWords(msg_words[i].split(" ")).reverse());
 	console.log("Words learned!");
-}
-
-// Finds the average count for a word. Useful for finding the rarity of a word in relation to every other word.
-
-function avgCount(){
-	var avg = 0;
-	for(var i = 0; i < db.w.length; i++)
-		avg += db.w[i].count;
-	avg /= db.w.length;
-	return avg;
 }
 
 /*
@@ -547,13 +543,12 @@ function swearFilter(str){
 	return str.replace(/fuck|shit|damn|porn|dick| ass|slut|cunt|bitch|masterba|vagina|penis/ig, "****");
 }
 
+// This line is for when bob needs to relearn words
+//justLearn(fs.readFileSync("/home/nathan/Documents/ai/reddit words.txt").toString()); justLearn(fs.readFileSync("/home/nathan/Documents/words/words.txt").toString()); justLearn(fs.readFileSync("/home/nathan/Documents/f/messages.txt").toString());
+
 /*
 	Load word db from file.
 */
-
-//justLearn(fs.readFileSync("/home/nathan/Documents/ai/reddit words.txt").toString());
-//justLearn(fs.readFileSync("/home/nathan/Documents/words/words.txt").toString());
-//justLearn(fs.readFileSync("/home/nathan/Documents/f/messages.txt").toString());
 
 db.w = JSON.parse(fs.readFileSync("/home/nathan/Documents/f/db.txt").toString());
 
