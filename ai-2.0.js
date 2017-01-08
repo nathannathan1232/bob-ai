@@ -197,7 +197,7 @@ function command(o_msg, e){
 			post_countdown -= msg[msg.length - 2];
 			return "Post countdown is now " + post_countdown;
 		}
-		}
+	}
 
 	return false;
 } // End commands
