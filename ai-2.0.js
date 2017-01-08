@@ -1,20 +1,18 @@
 var login = require("facebook-chat-api");
 var fs = require('fs');
 var math = require("mathjs");
-var request = require("request");
-var http = require('http');
 var Horseman = require('node-horseman');
 
 "use strict";
 
-var version = "2.0";
+var version = "2.1";
 
 var user_email = "email@gmail.com",
 	user_password = "password";
 
 var db = {
 	w: [],
-	thinking: ["hello","bob","cool","awesome"]
+	thinking: ["hello","cool","awesome","memes","nice","words","school","bored","sentence"] // Misc words to start his thinking in case no one talks before he posts.
 };
 
 var last_sentence;
@@ -35,15 +33,12 @@ function messageIn(e){
 		return false;
 
 	var msg = e.body.replace(/\./, " ");
-	var sentences = msg.split(".");
 
 	console.log("Message in: " + msg + " ##########");
 
-	for(var i = 0; i < sentences.length; i++)
-		if(sentences)
-			learnWords(removeNonWords(sentences[i].split(" ")).reverse()); // Learn words from the message
+	learnWords(removeNonWords(msg.split(" ")).reverse()); // Learn words from the message
 
-	if(shouldRespond(msg))			// Return a message or false
+	if(shouldRespond(msg))
 		return messageOut(msg, e);
 	else {
 		return false;
@@ -85,10 +80,7 @@ function command(o_msg, e){
 	if(!msg[0].match(/bob/i) || msg.length < 2)
 		return false; // Returns false if the message doesn't start with bob.
 
-	// It's a good idea to always return something for a command. That way it won't check for other commands after.
 	// Returning false means that bob will generate a normal response.
-
-	// Preforms simple calculations
 
 	if(msg[1].match(/calc|calculate|math|evaluate/i)){
 		var equation = [];
@@ -100,12 +92,8 @@ function command(o_msg, e){
 		return result.toString();
 	}
 
-	// Tells you how many words he knows
-
 	if(o_msg.match(/how many words|words do you|do you know|how smart|what words/ig))
 		return "I know " + db.w.length + " words.";
-
-	// Bob can tell you some of his abilities
 
 	if(o_msg.replace(/bob /i, "").match(/what can|you do|your abilities|you able/i)){
 		var message = [
@@ -119,12 +107,8 @@ function command(o_msg, e){
 		return message[r(message)];
 	}
 
-	// Tells you his version
-
 	if(msg_b.match(/what version|your version/i))
 		return "I am version " + version;
-
-	// Generates a random number
 
 	if(msg_b.match(/random number/i)){
 		if(msg_b.match(/pick a random number between/i)){
@@ -136,12 +120,8 @@ function command(o_msg, e){
 		}
 	}
 
-	// Bob can tell you the time
-
 	if(msg_b.match(/what time|the time|what day|what year|what month/i))
 		return (new Date());
-
-	// How many times he's heard a word
 
 	if(o_msg.match(/how many times|heard the word/i)){
 		if(wordIndex(msg[msg.length - 1]) > -1)
@@ -154,8 +134,6 @@ function command(o_msg, e){
 
 	if(msg_b.match(/show info for/i))
 		return JSON.stringify(db.w[wordIndex(msg[msg.length - 1])]);
-
-	// Sets a reminder
 
 	if(msg_b.match(/remind me [\s\S]* in/i) && e){
 		var reminder = msg_b.replace(/remind me to|remind me|in[0-9]*seconds|in[\s\S]*hours|in[\s\S]*minutes/ig, "");
@@ -178,13 +156,9 @@ function command(o_msg, e){
 		return "Reminder set!";
 	}
 
-	/*
-		Changes the color of a chat.
-	*/
-
 	if(msg_b.match(/change color/i) && e){
 		var color = msg[msg.length - 1];
-		if(!color.length == 7 || !color.match(/#.../i)) {
+		if(!color.length > 3 || !color.match(/#.../i)) {
 			color = '#'+'0123456789abcdef'.split('').map(function(v,i,a){
 				return i > 5 ? null : a[Math.floor(Math.random() * 16)] }).join('');
 		}
@@ -196,18 +170,31 @@ function command(o_msg, e){
  		return "Color changed to " + color;
  	}
 
-	/*
-		Writes db.w to file.
-	*/
+ 	var admin_password = "5883";
+ 	if(msg[msg.length - 1] == admin_password) { // Admin commands
 
-	if(msg_b.match(/write db\.w/)){
-		fs.writeFile('db.txt', JSON.stringify(db.w, null, "\t"), function (err) {
-			if (err)
-				return console.log(err);
-			console.log('db.w saved to file!');
-		});
-		return "ok";
-	}
+		if(msg_b.match(/write db\.w/)){
+			fs.writeFile('db.txt', JSON.stringify(db.w, null, "\t"), function (err) {
+				if (err)
+					return console.log(err);
+				console.log('db.w saved to file!');
+			});
+			return "ok";
+		}
+
+		if(msg_b.match(/post to wall/i)) {
+			genPost();
+			return "Done!";
+		}
+
+		if(msg_b.match(/how long until you post/i))
+			return post_countdown + "/100";
+		
+		if(msg_b.match(/decrease post countdown by/i)) {
+			post_countdown -= msg[msg.length - 2];
+			return "Post countdown is now " + post_countdown;
+		}
+		}
 
 	return false;
 } // End commands
@@ -355,7 +342,6 @@ function genMessage(topic){
 	var sentence = db.w[word].word;
 
 	var length = Math.floor(Math.random()*(15)+25);
-	
 
 	var words_done = [word];
 	var possible = [[],[],[]];
@@ -530,14 +516,21 @@ function genPost() {
 	Every once in a while bob posts something. This function triggers that.
 */
 
+var post_countdown = 100;
+
 function tryToPost() {
-	if(Math.random() > .96) {
+	if(Math.random() > .5)
+		post_countdown--;
+
+	if(post_countdown < 1) {
+		console.log("Generating wall post!");
 		genPost();
+		post_countdown = 100;
 	}
 }
 
 var ms_in_an_hour = 3600000;
-setInterval(tryToPost, ms_in_an_hour);
+setInterval(tryToPost, ms_in_an_hour / 8); // Every 7.5 minutes there's a 50% chance of decreasing the post countdown.
 
 /*
 	The actual function that posts to wall
