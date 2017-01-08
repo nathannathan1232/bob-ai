@@ -5,7 +5,7 @@ var Horseman = require('node-horseman');
 
 "use strict";
 
-var version = "2.1";
+var version = "2.2";
 
 var user_email = "email@gmail.com",
 	user_password = "password";
@@ -72,6 +72,9 @@ function messageOut(o_msg, e){
 */
 
 function command(o_msg, e){
+
+	if(o_msg.match(/^@bob/i)) // Detect bob code
+		return bobCode(o_msg);
 
 	// o_msg is the original message, msg is split by word, and msg_b is the original minus the bob.
 	var msg = o_msg.split(" ");
@@ -198,6 +201,89 @@ function command(o_msg, e){
 
 	return false;
 } // End commands
+
+/*
+	This function evaluates bob's special code.
+	It allows people to make queries about bob and make him do certain things without
+	the eval function.
+*/
+
+function bobCode(code) {
+	code = code.replace(/^@bob /i, "");
+
+	var lines = code.split(";");
+
+	var result = {};
+
+	for(var i = 0; i < lines.length && i < 15; i++) {
+		var line = lines[i];
+		var args = line.replace(/^[\s\S]*\(|\)$| */g, "").split(",");
+		
+		for(var a = 0; a < args.length; a++)
+			args[a] = args[a].replace(/ /g, "");
+
+		if(line.match(/^words\(\)/))
+			result.words = db.w.length;
+
+		if(line.match(/^wordInfo\([\s\S]*\)/)) {
+			var info = {};
+			for(var a = 0; a < args.length; a++) {
+				if(wordIndex(args[a]) > -1) {
+					var this_word_info = db.w[wordIndex(args[a])];
+					if(this_word_info && JSON.stringify(this_word_info).length < 800)
+						info[args[a]] = this_word_info;
+					else if(JSON.stringify(this_word_info).length >= 800)
+						info[args[a]] = "Too much info to log";
+				} else
+					info[args[a]] = "Unknown word";
+			}
+			result.info = info;
+		}
+
+		if(line.match(/^wordCount\([\s\S]*\)/)) {
+			var counts = {};
+			for(var a = 0; a < args.length; a++) {
+				if(wordIndex(args[a]) > -1) {
+					var this_word_count = db.w[wordIndex(args[a])].count;
+					counts[args[a]] = this_word_count;
+				} else
+					counts[args[a]] = "Unknown Word";
+			}
+			result.counts = counts;
+		}
+
+		if(line.match(/^relatedWords\([\s\S]*\)/)) {
+			var related = {};
+			for(var a = 0; a < args.length; a++) {
+				if(wordIndex(args[a]) > -1) {
+					var this_word_related = db.w[wordIndex(args[a])].related;
+					if(this_word_related && JSON.stringify(this_word_related).length < 800)
+						related[args[a]] = this_word_related;
+					else if(JSON.stringify(this_word_related).length >= 800)
+						related[args[a]] = "Too many related words";
+				} else
+						related[args[a]] = "Unknown word";
+				
+			}
+			result.related = related;
+		}
+
+		if(line.match(/^thinking\([\s\S]*\)/))
+			result.thinking = db.thinking;
+
+		if(line.match(/^version\([\s\S]*\)/))
+			result.version = version;
+
+		if(line.match(/^lastSentence\([\s\S]*\)/))
+			result.last_sentence = last_sentence;
+
+		if(line.match(/^averageWordCount\([\s\S]*\)/))
+			result.average_word_count = avgCount();
+
+	}
+	console.log(result);
+	return JSON.stringify(result, null, "\t");
+}
 
 /*
 	Decides weather or not to respond.
